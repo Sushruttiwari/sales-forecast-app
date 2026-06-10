@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sales Forecast Predictor</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+    }
+
+    /* ── Top navbar ── */
+    .navbar {
+      background: #003366;
+      padding: 16px 40px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .navbar img { width: 32px; }
+    .navbar h1 { color: #fff; font-size: 18px; font-weight: 600; letter-spacing: 0.5px; }
+    .navbar span { color: #a0c4ff; font-size: 13px; margin-left: auto; }
+
+    /* ── Main layout ── */
+    .container {
+      max-width: 1100px;
+      margin: 36px auto;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 28px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #003366;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e8edf3;
+    }
+
+    /* ── Form grid ── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 16px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .form-group input {
+      padding: 9px 12px;
+      border: 1px solid #d0d7e3;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #1a1a2e;
+      transition: border 0.2s;
+      background: #fafbfd;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: #003366;
+      background: #fff;
+    }
+
+    /* ── Button ── */
+    .btn {
+      margin-top: 20px;
+      width: 100%;
+      padding: 13px;
+      background: #003366;
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #00254d; }
+
+    /* ── Result box ── */
+    .result-box {
+      display: none;
+      margin-top: 20px;
+      background: #eaf1fb;
+      border-left: 4px solid #003366;
+      border-radius: 7px;
+      padding: 16px 20px;
+    }
+    .result-box .label { font-size: 12px; color: #555; font-weight: 600; text-transform: uppercase; }
+    .result-box .value { font-size: 32px; font-weight: 700; color: #003366; margin-top: 4px; }
+
+    /* ── Chart panel ── */
+    .chart-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 220px;
+      color: #aaa;
+      font-size: 14px;
+      gap: 8px;
+    }
+    .chart-placeholder svg { opacity: 0.3; }
+
+    /* ── Stats row ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .stat-box {
+      background: #f5f8ff;
+      border-radius: 8px;
+      padding: 14px;
+      text-align: center;
+    }
+    .stat-box .s-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-box .s-value { font-size: 18px; font-weight: 700; color: #003366; margin-top: 4px; }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      color: #aaa;
+      font-size: 12px;
+      margin: 24px 0 40px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<div class="navbar">
+  <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+    <rect width="28" height="28" rx="6" fill="#a0c4ff" opacity="0.3"/>
+    <polyline points="4,22 10,14 16,18 24,8" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <h1>SalesCast &nbsp;|&nbsp; Forecast Intelligence</h1>
+  <span>Powered by Machine Learning</span>
+</div>
+
+<!-- Main grid -->
+<div class="container">
+
+  <!-- LEFT: Input form -->
+  <div class="card">
+    <div class="card-title">🔢 Input Parameters</div>
+    <div class="form-grid">
+      <div class="form-group"><label>Store</label><input type="number" id="Store" placeholder="e.g. 1"></div>
+      <div class="form-group"><label>Department</label><input type="number" id="Dept" placeholder="e.g. 5"></div>
+      <div class="form-group"><label>Is Holiday (0/1)</label><input type="number" id="IsHoliday" placeholder="0 or 1"></div>
+      <div class="form-group"><label>Temperature (°F)</label><input type="number" id="Temperature" placeholder="e.g. 72.5"></div>
+      <div class="form-group"><label>Fuel Price</label><input type="number" step="0.01" id="Fuel_Price" placeholder="e.g. 3.45"></div>
+      <div class="form-group"><label>MarkDown 1</label><input type="number" id="MarkDown1" placeholder="e.g. 1200"></div>
+      <div class="form-group"><label>MarkDown 2</label><input type="number" id="MarkDown2" placeholder="e.g. 500"></div>
+      <div class="form-group"><label>MarkDown 3</label><input type="number" id="MarkDown3" placeholder="e.g. 300"></div>
+      <div class="form-group"><label>MarkDown 4</label><input type="number" id="MarkDown4" placeholder="e.g. 200"></div>
+      <div class="form-group"><label>MarkDown 5</label><input type="number" id="MarkDown5" placeholder="e.g. 100"></div>
+      <div class="form-group"><label>CPI</label><input type="number" step="0.01" id="CPI" placeholder="e.g. 211.5"></div>
+      <div class="form-group"><label>Unemployment %</label><input type="number" step="0.01" id="Unemployment" placeholder="e.g. 7.8"></div>
+      <div class="form-group"><label>Year</label><input type="number" id="Year" placeholder="e.g. 2023"></div>
+      <div class="form-group"><label>Month</label><input type="number" id="Month" placeholder="1 - 12"></div>
+      <div class="form-group" style="grid-column: span 2"><label>Week</label><input type="number" id="Week" placeholder="1 - 52"></div>
+    </div>
+
+    <button class="btn" onclick="predict()">▶ &nbsp; Run Forecast</button>
+
+    <div class="result-box" id="result">
+      <div class="label">Predicted Weekly Sales</div>
+      <div class="value" id="sales-value">—</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Chart + stats -->
+  <div style="display: flex; flex-direction: column; gap: 24px;">
+
+    <div class="card">
+      <div class="card-title">📊 Forecast Chart</div>
+      <div class="chart-placeholder" id="chart-placeholder">
+        <svg width="48" height="48" viewBox="0 0 48 48"><rect x="4" y="28" width="8" height="16" rx="2" fill="#003366"/><rect x="16" y="18" width="8" height="26" rx="2" fill="#003366"/><rect x="28" y="10" width="8" height="34" rx="2" fill="#003366"/><rect x="40" y="22" width="8" height="22" rx="2" fill="#003366"/></svg>
+        Fill in the form and run a forecast to see the chart
+      </div>
+      <canvas id="forecastChart" style="display:none;"></canvas>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 Forecast Summary</div>
+      <div class="stats-row">
+        <div class="stat-box"><div class="s-label">Prediction</div><div class="s-value" id="stat-pred">—</div></div>
+        <div class="stat-box"><div class="s-label">Store</div><div class="s-value" id="stat-store">—</div></div>
+        <div class="stat-box"><div class="s-label">Week</div><div class="s-value" id="stat-week">—</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer">SalesCast &copy; 2024 &nbsp;|&nbsp; ML-Powered Sales Intelligence</div>
+
+<script>
+  let chartInstance = null;
+  const history = [];
+
+  async function predict() {
+    const data = {
+      Store:        parseInt(document.getElementById('Store').value),
+      Dept:         parseInt(document.getElementById('Dept').value),
+      IsHoliday:    parseInt(document.getElementById('IsHoliday').value),
+      Temperature:  parseFloat(document.getElementById('Temperature').value),
+      Fuel_Price:   parseFloat(document.getElementById('Fuel_Price').value),
+      MarkDown1:    parseFloat(document.getElementById('MarkDown1').value),
+      MarkDown2:    parseFloat(document.getElementById('MarkDown2').value),
+      MarkDown3:    parseFloat(document.getElementById('MarkDown3').value),
+      MarkDown4:    parseFloat(document.getElementById('MarkDown4').value),
+      MarkDown5:    parseFloat(document.getElementById('MarkDown5').value),
+      CPI:          parseFloat(document.getElementById('CPI').value),
+      Unemployment: parseFloat(document.getElementById('Unemployment').value),
+      Year:         parseInt(document.getElementById('Year').value),
+      Month:        parseInt(document.getElementById('Month').value),
+      Week:         parseInt(document.getElementById('Week').value)
+    };
+
+    try {
+      const res = await fetch('/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      const predicted = result.predicted_sales;
+
+      // Update result box
+      document.getElementById('sales-value').textContent = '₹' + predicted.toLocaleString();
+      document.getElementById('result').style.display = 'block';
+
+      // Update stats
+      document.getElementById('stat-pred').textContent = '₹' + predicted.toLocaleString();
+      document.getElementById('stat-store').textContent = data.Store;
+      document.getElementById('stat-week').textContent = 'W' + data.Week;
+
+      // Add to history for chart
+      history.push({ label: `W${data.Week} S${data.Store}`, value: predicted });
+      if (history.length > 8) history.shift();
+      updateChart();
+
+    } catch (err) {
+      alert('Error connecting to server. Is uvicorn running?');
+    }
+  }
+
+  function updateChart() {
+    document.getElementById('chart-placeholder').style.display = 'none';
+    document.getElementById('forecastChart').style.display = 'block';
+
+    const ctx = document.getElementById('forecastChart').getContext('2d');
+    if (chartInstance) chartInstance.destroy();
+
+    chartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: history.map(h => h.label),
+        datasets: [{
+          label: 'Predicted Sales (₹)',
+          data: history.map(h => h.value),
+          backgroundColor: 'rgba(0, 51, 102, 0.75)',
+          borderColor: '#003366',
+          borderWidth: 1.5,
+          borderRadius: 5,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => '₹' + ctx.parsed.y.toLocaleString()
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: false,
+            ticks: {
+              callback: val => '₹' + val.toLocaleString()
+            },
+            grid: { color: '#e8edf3' }
+          },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  }
+</script>
+</body>
+</html>
