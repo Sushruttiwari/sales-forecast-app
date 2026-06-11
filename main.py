@@ -7,7 +7,7 @@ from pathlib import Path
 
 app = FastAPI()
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent
 model = joblib.load(BASE_DIR / "sales_model.pkl")
 
 class SalesInput(BaseModel):
