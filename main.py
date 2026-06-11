@@ -40,4 +40,4 @@ def predict(data: SalesInput):
     prediction = model.predict(features)
     return {"predicted_sales": round(float(prediction[0]), 2)}
 
-app.mount("/", StaticFiles(directory=str(BASE_DIR / "apps" / "static"), html=True), name="static")
+app.mount("/", StaticFiles(directory=str(BASE_DIR), html=True), name="static")
